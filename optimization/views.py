@@ -12,6 +12,7 @@ def home(request):
     return render(request, 'optimization/home.html')
 
 
+@csrf_exempt
 def upload(request):
     """Upload dataset page"""
     if request.method == 'GET':
@@ -58,6 +59,7 @@ def algorithm_selection(request):
     })
 
 
+@csrf_exempt
 def solve(request, problem):
     """Solve optimization problem"""
     if request.method != 'POST':
