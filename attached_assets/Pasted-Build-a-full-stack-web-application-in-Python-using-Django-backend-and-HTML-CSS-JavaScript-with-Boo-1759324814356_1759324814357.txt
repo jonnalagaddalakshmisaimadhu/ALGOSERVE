@@ -1,0 +1,47 @@
+Build a full-stack web application in Python using Django (backend) and HTML/CSS/JavaScript with Bootstrap (frontend).
+
+Project Name: Combinatorial Optimization: Multi-Strategy Approach
+
+Goal: A site where users can upload datasets, choose a combinatorial optimization problem (TSP, Knapsack, Graph Matching), select algorithms (Greedy, Divide & Conquer, Dynamic Programming, Backtracking, Branch & Bound), and compare results. No database should be used; all operations are performed in memory during a session.
+
+Requirements:
+
+1. Backend (Django):
+   - Create a Django app `optimization`.
+   - Implement algorithms in `optimization/algorithms/`:
+     - Knapsack: Greedy, Dynamic Programming, Backtracking, Branch & Bound.
+     - TSP: Greedy (Nearest Neighbor), Dynamic Programming (Held-Karp), Backtracking, Branch & Bound.
+     - Graph Matching: Greedy, Backtracking, etc.
+   - Each algorithm should return:
+     - Best solution
+     - Execution time
+     - Memory usage
+   - Views:
+     - `/upload/` → Upload dataset (CSV/JSON), parse in memory.
+     - `/solve/<problem>/` → Accept user input (problem type + algorithms), run algorithms in memory, return JSON results.
+   - No models or database storage required.
+
+2. Frontend (Templates + Static Files):
+   - **Home Page**: Project description + start button.
+   - **Dataset Upload Page**: File input for CSV/JSON, dropdown to select problem type.
+   - **Algorithm Selection Page**: Checkboxes for Greedy, DP, Backtracking, Branch & Bound.
+   - **Results Page**:
+     - Display solution details (e.g., chosen items for Knapsack, TSP path).
+     - Compare algorithm runtimes using bar charts (Chart.js).
+     - Visualize:
+       - TSP: plot route on a simple 2D graph (Plotly.js).
+       - Knapsack: show selected items in a table.
+       - Graph Matching: draw graph edges with matched pairs highlighted.
+
+3. Visualization:
+   - Use Chart.js for runtime/memory comparison.
+   - Use Plotly.js for TSP route and Graph Matching visualization.
+
+4. Tech Stack:
+   - Backend: Django + Python
+   - Frontend: HTML + Bootstrap + Chart.js/Plotly
+   - No database (everything is temporary and in memory).
+
+5. UI Flow:
+   - User uploads dataset → selects problem type → selects algorithms → Django runs algorithms → results are displayed immediately with charts + visualizations.
+   - When user refreshes page, data is cleared (no persistence).
