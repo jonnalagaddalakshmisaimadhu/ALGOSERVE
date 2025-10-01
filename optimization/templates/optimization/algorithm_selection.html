@@ -1,0 +1,122 @@
+{% extends 'optimization/base.html' %}
+
+{% block title %}Select Algorithms{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="mb-4"><i class="bi bi-gear"></i> Select Algorithms</h2>
+                
+                <div class="alert alert-success mb-4">
+                    <i class="bi bi-check-circle"></i> Problem Type: <strong>{{ problem_type|title }}</strong>
+                </div>
+
+                <form id="algorithmForm">
+                    <h5 class="mb-3">Choose Algorithms to Compare:</h5>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="greedy" id="greedy" name="algorithms">
+                        <label class="form-check-label" for="greedy">
+                            <strong>Greedy Algorithm</strong>
+                            <p class="text-muted small mb-0">Fast heuristic approach, finds good solutions quickly</p>
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="dynamic_programming" id="dynamic_programming" name="algorithms">
+                        <label class="form-check-label" for="dynamic_programming">
+                            <strong>Dynamic Programming</strong>
+                            <p class="text-muted small mb-0">Optimal solution using memoization (may be slow for large datasets)</p>
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" value="backtracking" id="backtracking" name="algorithms">
+                        <label class="form-check-label" for="backtracking">
+                            <strong>Backtracking</strong>
+                            <p class="text-muted small mb-0">Explores all possibilities with pruning (slow for large datasets)</p>
+                        </label>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" value="branch_and_bound" id="branch_and_bound" name="algorithms">
+                        <label class="form-check-label" for="branch_and_bound">
+                            <strong>Branch and Bound</strong>
+                            <p class="text-muted small mb-0">Optimal solution with intelligent pruning (faster than backtracking)</p>
+                        </label>
+                    </div>
+
+                    <div class="alert alert-warning" id="noSelection" style="display: none;">
+                        <i class="bi bi-exclamation-triangle"></i> Please select at least one algorithm
+                    </div>
+
+                    <div id="loadingSpinner" style="display: none;" class="text-center mb-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Running algorithms...</p>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="solveBtn">
+                            <i class="bi bi-play-circle"></i> Solve & Compare
+                        </button>
+                        <a href="{% url 'upload' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const problemType = "{{ problem_type }}";
+
+document.getElementById('algorithmForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const checkboxes = document.querySelectorAll('input[name="algorithms"]:checked');
+    const algorithms = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (algorithms.length === 0) {
+        document.getElementById('noSelection').style.display = 'block';
+        return;
+    }
+    
+    document.getElementById('noSelection').style.display = 'none';
+    document.getElementById('loadingSpinner').style.display = 'block';
+    document.getElementById('solveBtn').disabled = true;
+    
+    try {
+        const response = await fetch(`/solve/${problemType}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ algorithms })
+        });
+        
+        const results = await response.json();
+        
+        if (response.ok) {
+            sessionStorage.setItem('results', JSON.stringify(results));
+            sessionStorage.setItem('problemType', problemType);
+            window.location.href = '/results/';
+        } else {
+            alert('Error: ' + results.error);
+            document.getElementById('loadingSpinner').style.display = 'none';
+            document.getElementById('solveBtn').disabled = false;
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        document.getElementById('loadingSpinner').style.display = 'none';
+        document.getElementById('solveBtn').disabled = false;
+    }
+});
+</script>
+{% endblock %}

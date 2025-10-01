@@ -1,0 +1,87 @@
+{% extends 'optimization/base.html' %}
+
+{% block title %}Upload Dataset{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-5">
+                <h2 class="mb-4"><i class="bi bi-cloud-upload"></i> Upload Dataset</h2>
+                
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="problem_type" class="form-label">Problem Type</label>
+                        <select class="form-select" id="problem_type" name="problem_type" required>
+                            <option value="">Select problem type...</option>
+                            <option value="knapsack">Knapsack Problem</option>
+                            <option value="tsp">Traveling Salesman Problem (TSP)</option>
+                            <option value="graph_matching">Graph Matching</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="dataset" class="form-label">Dataset File (CSV or JSON)</label>
+                        <input class="form-control" type="file" id="dataset" name="dataset" accept=".csv,.json" required>
+                        <div class="form-text">Upload your dataset in CSV or JSON format</div>
+                    </div>
+
+                    <div class="alert alert-info" id="formatInfo">
+                        <h6>Expected Format:</h6>
+                        <div id="formatDetails"></div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-arrow-right-circle"></i> Continue
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('problem_type').addEventListener('change', function() {
+    const formatDetails = document.getElementById('formatDetails');
+    const problemType = this.value;
+    
+    const formats = {
+        'knapsack': `
+            <p><strong>Knapsack:</strong></p>
+            <pre>weight,value,capacity
+10,60,50
+20,100,50
+30,120,50</pre>
+            <p class="small mb-0">Each row represents an item with weight and value. Include capacity in each row.</p>
+        `,
+        'tsp': `
+            <p><strong>TSP (Coordinates):</strong></p>
+            <pre>x,y
+0,0
+1,2
+3,1
+2,4</pre>
+            <p class="small mb-0">Each row represents a city with x,y coordinates.</p>
+        `,
+        'graph_matching': `
+            <p><strong>Graph Matching:</strong></p>
+            <pre>u,v,weight
+0,1,5
+1,2,3
+2,3,7
+0,3,2</pre>
+            <p class="small mb-0">Each row represents an edge with source (u), destination (v), and weight.</p>
+        `
+    };
+    
+    formatDetails.innerHTML = formats[problemType] || '<p>Select a problem type to see format details.</p>';
+});
+</script>
+{% endblock %}

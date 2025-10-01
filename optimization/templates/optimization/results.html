@@ -1,0 +1,238 @@
+{% extends 'optimization/base.html' %}
+
+{% block title %}Results{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="mb-4"><i class="bi bi-bar-chart-line"></i> Algorithm Comparison Results</h2>
+                
+                <div id="resultsContainer">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading results...</p>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a href="{% url 'upload' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat"></i> Solve Another Problem
+                    </a>
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const results = JSON.parse(sessionStorage.getItem('results'));
+const problemType = sessionStorage.getItem('problemType');
+
+if (!results || !problemType) {
+    window.location.href = '/upload/';
+}
+
+function displayResults() {
+    const container = document.getElementById('resultsContainer');
+    
+    const algorithms = Object.keys(results);
+    const times = algorithms.map(alg => results[alg].time);
+    const memories = algorithms.map(alg => Math.abs(results[alg].memory));
+    
+    let html = `
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Execution Time Comparison</h5>
+                <canvas id="timeChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h5>Memory Usage Comparison</h5>
+                <canvas id="memoryChart"></canvas>
+            </div>
+        </div>
+    `;
+    
+    // Algorithm details
+    html += '<div class="row">';
+    algorithms.forEach(alg => {
+        const data = results[alg];
+        const solution = data.solution;
+        
+        html += `
+            <div class="col-md-6 mb-4">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">${formatAlgorithmName(alg)}</h5>
+                        <p class="mb-2"><strong>Time:</strong> ${data.time.toFixed(4)} seconds</p>
+                        <p class="mb-2"><strong>Memory:</strong> ${Math.abs(data.memory).toFixed(2)} MB</p>
+                        ${formatSolution(problemType, solution)}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    
+    // Visualization section
+    html += '<div class="row mt-4"><div class="col-12" id="visualizationSection"></div></div>';
+    
+    container.innerHTML = html;
+    
+    // Create charts
+    createCharts(algorithms, times, memories);
+    
+    // Create problem-specific visualizations
+    createVisualization(problemType, results);
+}
+
+function formatAlgorithmName(alg) {
+    return alg.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function formatSolution(problemType, solution) {
+    if (solution.error) {
+        return `<div class="alert alert-warning small mb-0">${solution.error}</div>`;
+    }
+    
+    if (problemType === 'knapsack') {
+        return `
+            <p class="mb-1"><strong>Total Value:</strong> ${solution.total_value}</p>
+            <p class="mb-1"><strong>Total Weight:</strong> ${solution.total_weight}</p>
+            <p class="mb-0"><strong>Items Selected:</strong> ${solution.selected_items.length} (${solution.selected_items.join(', ')})</p>
+        `;
+    } else if (problemType === 'tsp') {
+        return `
+            <p class="mb-1"><strong>Total Distance:</strong> ${solution.total_distance.toFixed(2)}</p>
+            <p class="mb-0"><strong>Path:</strong> ${solution.path ? solution.path.join(' → ') : 'N/A'}</p>
+        `;
+    } else if (problemType === 'graph_matching') {
+        return `
+            <p class="mb-1"><strong>Total Weight:</strong> ${solution.total_weight}</p>
+            <p class="mb-0"><strong>Matched Edges:</strong> ${solution.num_matched}</p>
+        `;
+    }
+    return '';
+}
+
+function createCharts(algorithms, times, memories) {
+    const labels = algorithms.map(formatAlgorithmName);
+    
+    new Chart(document.getElementById('timeChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Execution Time (seconds)',
+                data: times,
+                backgroundColor: 'rgba(102, 126, 234, 0.6)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+    
+    new Chart(document.getElementById('memoryChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Memory Usage (MB)',
+                data: memories,
+                backgroundColor: 'rgba(118, 75, 162, 0.6)',
+                borderColor: 'rgba(118, 75, 162, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+function createVisualization(problemType, results) {
+    const section = document.getElementById('visualizationSection');
+    
+    if (problemType === 'tsp') {
+        // Get first valid result
+        let bestResult = null;
+        for (let alg in results) {
+            if (results[alg].solution.coordinates && results[alg].solution.path) {
+                bestResult = results[alg].solution;
+                break;
+            }
+        }
+        
+        if (bestResult && bestResult.coordinates) {
+            section.innerHTML = '<h5 class="mb-3">TSP Route Visualization</h5><div id="tspPlot"></div>';
+            
+            const coords = bestResult.coordinates;
+            const path = bestResult.path;
+            
+            const x = path.map(i => coords[i][0]);
+            const y = path.map(i => coords[i][1]);
+            
+            const trace = {
+                x: x,
+                y: y,
+                mode: 'lines+markers',
+                type: 'scatter',
+                marker: { size: 12, color: 'red' },
+                line: { color: 'blue', width: 2 }
+            };
+            
+            const layout = {
+                title: 'TSP Route',
+                xaxis: { title: 'X Coordinate' },
+                yaxis: { title: 'Y Coordinate' },
+                showlegend: false
+            };
+            
+            Plotly.newPlot('tspPlot', [trace], layout);
+        }
+    } else if (problemType === 'graph_matching') {
+        // Get first valid result
+        let bestResult = null;
+        for (let alg in results) {
+            if (results[alg].solution.matched_edges && results[alg].solution.matched_edges.length > 0) {
+                bestResult = results[alg].solution;
+                break;
+            }
+        }
+        
+        if (bestResult) {
+            section.innerHTML = '<h5 class="mb-3">Graph Matching Visualization</h5><div id="graphPlot"></div>';
+            
+            const edges = bestResult.matched_edges;
+            
+            // Create a simple visualization
+            let html = '<div class="table-responsive"><table class="table table-bordered"><thead><tr><th>Vertex U</th><th>Vertex V</th><th>Weight</th></tr></thead><tbody>';
+            edges.forEach(edge => {
+                html += `<tr><td>${edge[0]}</td><td>${edge[1]}</td><td>${edge[2]}</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+            document.getElementById('graphPlot').innerHTML = html;
+        }
+    } else if (problemType === 'knapsack') {
+        section.innerHTML = '<h5 class="mb-3">Selected Items Summary</h5><div class="alert alert-info">Knapsack items are shown in the algorithm details above.</div>';
+    }
+}
+
+displayResults();
+</script>
+{% endblock %}
