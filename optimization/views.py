@@ -94,10 +94,20 @@ def solve_knapsack(dataset, algorithms):
     """Execute knapsack algorithms"""
     results = {}
     
+    # Normalize keys (handle case sensitivity and whitespace)
+    normalized_dataset = []
+    for item in dataset:
+        normalized_item = {k.strip().lower(): v for k, v in item.items()}
+        normalized_dataset.append(normalized_item)
+    
+    # Validate required fields
+    if not normalized_dataset or 'weight' not in normalized_dataset[0] or 'value' not in normalized_dataset[0]:
+        raise ValueError("Dataset must contain 'weight' and 'value' columns")
+    
     # Parse dataset
-    weights = [item['weight'] for item in dataset]
-    values = [item['value'] for item in dataset]
-    capacity = dataset[0].get('capacity', 50)
+    weights = [int(item['weight']) for item in normalized_dataset]
+    values = [int(item['value']) for item in normalized_dataset]
+    capacity = int(normalized_dataset[0].get('capacity', 50))
     
     if 'greedy' in algorithms:
         results['greedy'] = knapsack.knapsack_greedy(weights, values, capacity)
@@ -118,9 +128,15 @@ def solve_tsp(dataset, algorithms):
     """Execute TSP algorithms"""
     results = {}
     
+    # Normalize keys
+    normalized_dataset = []
+    for item in dataset:
+        normalized_item = {k.strip().lower(): v for k, v in item.items()}
+        normalized_dataset.append(normalized_item)
+    
     # Parse dataset - expect coordinates or distance matrix
-    if 'x' in dataset[0] and 'y' in dataset[0]:
-        coordinates = [(item['x'], item['y']) for item in dataset]
+    if 'x' in normalized_dataset[0] and 'y' in normalized_dataset[0]:
+        coordinates = [(float(item['x']), float(item['y'])) for item in normalized_dataset]
         n = len(coordinates)
         
         # Calculate distance matrix
@@ -155,8 +171,18 @@ def solve_graph_matching(dataset, algorithms):
     """Execute graph matching algorithms"""
     results = {}
     
+    # Normalize keys
+    normalized_dataset = []
+    for item in dataset:
+        normalized_item = {k.strip().lower(): v for k, v in item.items()}
+        normalized_dataset.append(normalized_item)
+    
+    # Validate required fields
+    if not normalized_dataset or 'u' not in normalized_dataset[0] or 'v' not in normalized_dataset[0] or 'weight' not in normalized_dataset[0]:
+        raise ValueError("Dataset must contain 'u', 'v', and 'weight' columns")
+    
     # Parse dataset - expect edges with format: {u, v, weight}
-    edges = [(item['u'], item['v'], item['weight']) for item in dataset]
+    edges = [(int(item['u']), int(item['v']), float(item['weight'])) for item in normalized_dataset]
     
     if 'greedy' in algorithms:
         results['greedy'] = graph_matching.graph_matching_greedy(edges)
